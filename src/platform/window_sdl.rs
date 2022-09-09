@@ -30,6 +30,7 @@ struct SdlController {
     controller: GameController,
     slot: usize,
     supports_rumble: bool,
+    supports_led: bool,
 }
 
 pub struct Window {
@@ -268,7 +269,7 @@ impl Window {
             width as u32,
             height as u32,
             width as u32 * 4,
-            PixelMasks {
+            &PixelMasks {
                 bpp: 32,
                 rmask: 0x000000FF,
                 gmask: 0x0000FF00,
@@ -451,6 +452,23 @@ impl Window {
         }
     }
 
+    pub fn is_gamepad_led_supported(&self, platform_id: u32) -> bool {
+        self.controllers
+            .get(&platform_id)
+            .map(|c| c.supports_rumble)
+            .unwrap_or(false)
+    }
+
+    pub fn set_gamepad_led(&mut self, platform_id: u32, red: u8, green: u8, blue: u8) {
+        if let Some(controller) = self
+            .controllers
+            .get_mut(&platform_id)
+            .map(|c| &mut c.controller)
+        {
+            let _ = controller.set_led(red, green, blue);
+        }
+    }
+
     pub fn set_screen_saver_enabled(&self, screen_saver_enabled: bool) {
         if screen_saver_enabled {
             self.video_sys.enable_screen_saver()
@@ -620,6 +638,7 @@ where
                 let slot = input::add_gamepad(ctx, id);
 
                 let supports_rumble = controller.set_rumble(0, 0, 0).is_ok();
+                let supports_led = controller.has_led();
 
                 ctx.window.controllers.insert(
                     id,
@@ -627,6 +646,7 @@ where
                         controller,
                         slot,
                         supports_rumble,
+                        supports_led,
                     },
                 );
 
