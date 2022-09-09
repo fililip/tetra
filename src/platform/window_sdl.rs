@@ -491,7 +491,10 @@ where
 {
     while let Some(event) = ctx.window.event_pump.poll_event() {
         match event {
-            SdlEvent::Quit { .. } => ctx.running = false, // TODO: Add a way to override this
+            SdlEvent::Quit { .. } => {
+                state.event(ctx, Event::Quit);
+                ctx.running = false; // TODO: Add a way to override this
+            },
 
             SdlEvent::Window { win_event, .. } => match win_event {
                 WindowEvent::SizeChanged(width, height) => {

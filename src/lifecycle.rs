@@ -199,4 +199,8 @@ pub enum Event {
         /// The path of the file that was dropped.
         path: PathBuf,
     },
+
+
+    /// The application was closed.
+    Quit,
 }
