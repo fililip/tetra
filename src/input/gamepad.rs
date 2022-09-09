@@ -312,6 +312,24 @@ pub fn stop_gamepad_vibration(ctx: &mut Context, gamepad_id: usize) {
     }
 }
 
+/// Returns true if the specified gamepad has an LED.
+///
+/// If the gamepad is disconnected, this will always return `false`.
+pub fn is_gamepad_led_supported(ctx: &Context, gamepad_id: usize) -> bool {
+    if let Some(pad) = get_gamepad(ctx, gamepad_id) {
+        ctx.window.is_gamepad_led_supported(pad.platform_id)
+    } else {
+        false
+    }
+}
+
+/// Sets the specified gamepad's LED to a specific color.
+pub fn set_gamepad_led(ctx: &mut Context, gamepad_id: usize, red: u8, green: u8, blue: u8) {
+    if let Some(platform_id) = get_gamepad(ctx, gamepad_id).map(|g| g.platform_id) {
+        ctx.window.set_gamepad_led(platform_id, red, green, blue);
+    }
+}
+
 pub(crate) fn add_gamepad(ctx: &mut Context, platform_id: u32) -> usize {
     for (i, slot) in ctx.input.pads.iter_mut().enumerate() {
         if slot.is_none() {
