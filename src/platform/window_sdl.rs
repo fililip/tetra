@@ -455,7 +455,7 @@ impl Window {
     pub fn is_gamepad_led_supported(&self, platform_id: u32) -> bool {
         self.controllers
             .get(&platform_id)
-            .map(|c| c.supports_rumble)
+            .map(|c| c.supports_led)
             .unwrap_or(false)
     }
 
