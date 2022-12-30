@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::input::{GamepadAxis, GamepadButton, GamepadStick, Key, MouseButton};
+use crate::input::{Key, MouseButton};
 use crate::math::Vec2;
 use crate::{Context, TetraError};
 
@@ -125,60 +125,6 @@ pub enum Event {
         /// Positive values correspond to scrolling up/right, negative values correspond to scrolling
         /// down/left.
         amount: Vec2<i32>,
-    },
-
-    /// A gamepad was connected to the system.
-    GamepadAdded {
-        /// The ID that was assigned to the gamepad.
-        id: usize,
-    },
-
-    /// A gamepad was removed from the system.
-    GamepadRemoved {
-        /// The ID of the gamepad that was removed.
-        id: usize,
-    },
-
-    /// A button on a gamepad was pressed.
-    GamepadButtonPressed {
-        /// The ID of the gamepad.
-        id: usize,
-
-        /// The button that was pressed.
-        button: GamepadButton,
-    },
-
-    /// A button on a gamepad was released.
-    GamepadButtonReleased {
-        /// The ID of the gamepad.
-        id: usize,
-
-        /// The button that was released.
-        button: GamepadButton,
-    },
-
-    /// An axis on a gamepad was moved.
-    GamepadAxisMoved {
-        /// The ID of the gamepad.
-        id: usize,
-
-        /// The axis that was moved.
-        axis: GamepadAxis,
-
-        /// The new position of the axis.
-        position: f32,
-    },
-
-    /// A control stick on a gamepad was moved.
-    GamepadStickMoved {
-        /// The ID of the gamepad.
-        id: usize,
-
-        /// The stick that was moved.
-        stick: GamepadStick,
-
-        /// The new position of the stick.
-        position: Vec2<f32>,
     },
 
     /// The user typed some text.

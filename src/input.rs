@@ -23,7 +23,6 @@
 //! The [`text_input`](https://github.com/17cupsofcoffee/tetra/blob/main/examples/text_input.rs)
 //! example demonstrates how to handle text entry.
 
-mod gamepad;
 mod keyboard;
 mod mouse;
 
@@ -32,7 +31,6 @@ use hashbrown::HashSet;
 use crate::math::Vec2;
 use crate::{Context, Result};
 
-pub use gamepad::*;
 pub use keyboard::*;
 pub use mouse::*;
 
@@ -50,8 +48,6 @@ pub(crate) struct InputContext {
     mouse_wheel_movement: Vec2<i32>,
 
     current_text_input: Option<String>,
-
-    pads: Vec<Option<GamepadState>>,
 }
 
 impl InputContext {
@@ -70,8 +66,6 @@ impl InputContext {
             mouse_wheel_movement: Vec2::zero(),
 
             current_text_input: None,
-
-            pads: Vec::new(),
         }
     }
 }
@@ -84,11 +78,6 @@ pub(crate) fn clear(ctx: &mut Context) {
     ctx.input.mouse_wheel_movement = Vec2::zero();
 
     ctx.input.current_text_input = None;
-
-    for pad in ctx.input.pads.iter_mut().flatten() {
-        pad.buttons_pressed.clear();
-        pad.buttons_released.clear();
-    }
 }
 
 /// Returns the text that the user entered since the last update.

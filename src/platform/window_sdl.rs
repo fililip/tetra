@@ -3,8 +3,6 @@ use std::path::PathBuf;
 use std::result;
 
 use glow::Context as GlowContext;
-use hashbrown::HashMap;
-use sdl2::controller::{Axis as SdlGamepadAxis, Button as SdlGamepadButton, GameController};
 use sdl2::event::{Event as SdlEvent, WindowEvent};
 use sdl2::keyboard::{Keycode, Mod, Scancode};
 use sdl2::mouse::{MouseButton as SdlMouseButton, MouseWheelDirection};
@@ -15,23 +13,16 @@ use sdl2::video::{
     FullscreenType, GLContext as SdlGlContext, GLProfile, SwapInterval, Window as SdlWindow,
     WindowPos,
 };
-use sdl2::{EventPump, GameControllerSubsystem, JoystickSubsystem, Sdl, VideoSubsystem};
+use sdl2::{EventPump, Sdl, VideoSubsystem};
 
 use crate::error::{Result, TetraError};
 use crate::graphics::{self, ImageData};
 use crate::input::{
-    self, GamepadAxis, GamepadButton, GamepadStick, Key, KeyLabel, KeyModifierState, MouseButton,
+    self, Key, KeyLabel, KeyModifierState, MouseButton,
 };
 use crate::math::Vec2;
 use crate::window::WindowPosition;
 use crate::{Context, ContextBuilder, Event, State};
-
-struct SdlController {
-    controller: GameController,
-    slot: usize,
-    supports_rumble: bool,
-    supports_led: bool,
-}
 
 pub struct Window {
     sdl: Sdl,
@@ -39,11 +30,7 @@ pub struct Window {
 
     event_pump: EventPump,
     video_sys: VideoSubsystem,
-    controller_sys: GameControllerSubsystem,
-    _joystick_sys: JoystickSubsystem,
     _gl_sys: SdlGlContext,
-
-    controllers: HashMap<u32, SdlController>,
 
     window_visible: bool,
 
@@ -55,9 +42,7 @@ impl Window {
         let sdl = sdl2::init().map_err(TetraError::PlatformError)?;
         let event_pump = sdl.event_pump().map_err(TetraError::PlatformError)?;
         let video_sys = sdl.video().map_err(TetraError::PlatformError)?;
-        let joystick_sys = sdl.joystick().map_err(TetraError::PlatformError)?;
-        let controller_sys = sdl.game_controller().map_err(TetraError::PlatformError)?;
-
+        
         sdl2::hint::set("SDL_JOYSTICK_ALLOW_BACKGROUND_EVENTS", "1");
 
         let gl_attr = video_sys.gl_attr();
@@ -170,11 +155,8 @@ impl Window {
 
             event_pump,
             video_sys,
-            controller_sys,
-            _joystick_sys: joystick_sys,
+            //controller_sys,
             _gl_sys: gl_sys,
-
-            controllers: HashMap::new(),
 
             window_visible: false,
 
@@ -415,60 +397,6 @@ impl Window {
         self.sdl_window.gl_swap_window();
     }
 
-    pub fn get_gamepad_name(&self, platform_id: u32) -> String {
-        self.controllers[&platform_id].controller.name()
-    }
-
-    pub fn is_gamepad_vibration_supported(&self, platform_id: u32) -> bool {
-        self.controllers
-            .get(&platform_id)
-            .map(|c| c.supports_rumble)
-            .unwrap_or(false)
-    }
-
-    pub fn set_gamepad_vibration(&mut self, platform_id: u32, strength: f32) {
-        self.start_gamepad_vibration(platform_id, strength, 0);
-    }
-
-    pub fn start_gamepad_vibration(&mut self, platform_id: u32, strength: f32, duration: u32) {
-        if let Some(controller) = self
-            .controllers
-            .get_mut(&platform_id)
-            .map(|c| &mut c.controller)
-        {
-            let int_strength = ((u16::MAX as f32) * strength) as u16;
-
-            let _ = controller.set_rumble(int_strength, int_strength, duration);
-        }
-    }
-
-    pub fn stop_gamepad_vibration(&mut self, platform_id: u32) {
-        if let Some(controller) = self
-            .controllers
-            .get_mut(&platform_id)
-            .map(|c| &mut c.controller)
-        {
-            let _ = controller.set_rumble(0, 0, 0);
-        }
-    }
-
-    pub fn is_gamepad_led_supported(&self, platform_id: u32) -> bool {
-        self.controllers
-            .get(&platform_id)
-            .map(|c| c.supports_led)
-            .unwrap_or(false)
-    }
-
-    pub fn set_gamepad_led(&mut self, platform_id: u32, red: u8, green: u8, blue: u8) {
-        if let Some(controller) = self
-            .controllers
-            .get_mut(&platform_id)
-            .map(|c| &mut c.controller)
-        {
-            let _ = controller.set_led(red, green, blue);
-        }
-    }
-
     pub fn set_screen_saver_enabled(&self, screen_saver_enabled: bool) {
         if screen_saver_enabled {
             self.video_sys.enable_screen_saver()
@@ -510,7 +438,7 @@ where
     while let Some(event) = ctx.window.event_pump.poll_event() {
         match event {
             SdlEvent::Quit { .. } => {
-                state.event(ctx, Event::Quit);
+                let _ = state.event(ctx, Event::Quit);
                 ctx.running = false; // TODO: Add a way to override this
             },
 
@@ -628,144 +556,6 @@ where
                         path: PathBuf::from(filename),
                     },
                 )?;
-            }
-
-            SdlEvent::ControllerDeviceAdded { which, .. } => {
-                let mut controller = ctx
-                    .window
-                    .controller_sys
-                    .open(which)
-                    .map_err(|e| TetraError::PlatformError(e.to_string()))?;
-
-                let id = controller.instance_id();
-                let slot = input::add_gamepad(ctx, id);
-
-                let supports_rumble = controller.set_rumble(0, 0, 0).is_ok();
-                let supports_led = controller.has_led();
-
-                ctx.window.controllers.insert(
-                    id,
-                    SdlController {
-                        controller,
-                        slot,
-                        supports_rumble,
-                        supports_led,
-                    },
-                );
-
-                state.event(ctx, Event::GamepadAdded { id: slot })?;
-            }
-
-            SdlEvent::ControllerDeviceRemoved { which, .. } => {
-                let controller = ctx.window.controllers.remove(&which).unwrap();
-                input::remove_gamepad(ctx, controller.slot);
-
-                state.event(
-                    ctx,
-                    Event::GamepadRemoved {
-                        id: controller.slot,
-                    },
-                )?;
-            }
-
-            SdlEvent::ControllerButtonDown { which, button, .. } => {
-                if let Some(slot) = ctx.window.controllers.get(&which).map(|c| c.slot) {
-                    if let Some(pad) = input::get_gamepad_mut(ctx, slot) {
-                        if let Some(button) = into_gamepad_button(button) {
-                            pad.set_button_down(button);
-                            state.event(ctx, Event::GamepadButtonPressed { id: slot, button })?;
-                        }
-                    }
-                }
-            }
-
-            SdlEvent::ControllerButtonUp { which, button, .. } => {
-                if let Some(slot) = ctx.window.controllers.get(&which).map(|c| c.slot) {
-                    if let Some(pad) = input::get_gamepad_mut(ctx, slot) {
-                        if let Some(button) = into_gamepad_button(button) {
-                            // TODO: This can cause some inputs to be missed at low tick rates.
-                            // Could consider buffering input releases like Otter2D does?
-                            pad.set_button_up(button);
-                            state.event(ctx, Event::GamepadButtonReleased { id: slot, button })?;
-                        }
-                    }
-                }
-            }
-
-            SdlEvent::ControllerAxisMotion {
-                which, axis, value, ..
-            } => {
-                if let Some(slot) = ctx.window.controllers.get(&which).map(|c| c.slot) {
-                    if let Some(pad) = input::get_gamepad_mut(ctx, slot) {
-                        let axis = axis.into();
-
-                        let mapped_value = if value > 0 {
-                            f32::from(value) / 32767.0
-                        } else {
-                            f32::from(value) / 32768.0
-                        };
-
-                        pad.set_axis_position(axis, mapped_value);
-
-                        let button = match axis {
-                            GamepadAxis::LeftTrigger => Some(GamepadButton::LeftTrigger),
-                            GamepadAxis::RightTrigger => Some(GamepadButton::RightTrigger),
-                            _ => None,
-                        };
-
-                        if let Some(button) = button {
-                            if value > 0 {
-                                let pressed = pad.set_button_down(button);
-
-                                if pressed {
-                                    state.event(
-                                        ctx,
-                                        Event::GamepadButtonPressed { id: slot, button },
-                                    )?;
-                                }
-                            } else {
-                                let released = pad.set_button_up(button);
-
-                                if released {
-                                    state.event(
-                                        ctx,
-                                        Event::GamepadButtonReleased { id: slot, button },
-                                    )?;
-                                }
-                            }
-                        }
-
-                        state.event(
-                            ctx,
-                            Event::GamepadAxisMoved {
-                                id: slot,
-                                axis,
-                                position: mapped_value,
-                            },
-                        )?;
-
-                        let stick = match axis {
-                            GamepadAxis::LeftStickX | GamepadAxis::LeftStickY => {
-                                Some(GamepadStick::LeftStick)
-                            }
-                            GamepadAxis::RightStickX | GamepadAxis::RightStickY => {
-                                Some(GamepadStick::RightStick)
-                            }
-                            _ => None,
-                        };
-
-                        if let Some(stick) = stick {
-                            state.event(
-                                ctx,
-                                Event::GamepadStickMoved {
-                                    id: slot,
-                                    stick,
-                                    position: input::get_gamepad_stick_position(ctx, slot, stick),
-                                },
-                            )?;
-                        }
-                    }
-                }
             }
 
             _ => {}
@@ -1008,54 +798,6 @@ fn from_sdl_keymod(keymod: Mod) -> KeyModifierState {
         ctrl: keymod.intersects(Mod::LCTRLMOD | Mod::RCTRLMOD),
         alt: keymod.intersects(Mod::LALTMOD | Mod::RALTMOD),
         shift: keymod.intersects(Mod::LSHIFTMOD | Mod::RSHIFTMOD),
-    }
-}
-
-fn into_gamepad_button(button: SdlGamepadButton) -> Option<GamepadButton> {
-    match button {
-        SdlGamepadButton::A => Some(GamepadButton::A),
-        SdlGamepadButton::B => Some(GamepadButton::B),
-        SdlGamepadButton::X => Some(GamepadButton::X),
-        SdlGamepadButton::Y => Some(GamepadButton::Y),
-        SdlGamepadButton::DPadUp => Some(GamepadButton::Up),
-        SdlGamepadButton::DPadDown => Some(GamepadButton::Down),
-        SdlGamepadButton::DPadLeft => Some(GamepadButton::Left),
-        SdlGamepadButton::DPadRight => Some(GamepadButton::Right),
-        SdlGamepadButton::LeftShoulder => Some(GamepadButton::LeftShoulder),
-        SdlGamepadButton::LeftStick => Some(GamepadButton::LeftStick),
-        SdlGamepadButton::RightShoulder => Some(GamepadButton::RightShoulder),
-        SdlGamepadButton::RightStick => Some(GamepadButton::RightStick),
-        SdlGamepadButton::Start => Some(GamepadButton::Start),
-        SdlGamepadButton::Back => Some(GamepadButton::Back),
-        SdlGamepadButton::Guide => Some(GamepadButton::Guide),
-        _ => None,
-    }
-}
-#[doc(hidden)]
-impl From<GamepadAxis> for SdlGamepadAxis {
-    fn from(axis: GamepadAxis) -> SdlGamepadAxis {
-        match axis {
-            GamepadAxis::LeftStickX => SdlGamepadAxis::LeftX,
-            GamepadAxis::LeftStickY => SdlGamepadAxis::LeftY,
-            GamepadAxis::LeftTrigger => SdlGamepadAxis::TriggerLeft,
-            GamepadAxis::RightStickX => SdlGamepadAxis::RightX,
-            GamepadAxis::RightStickY => SdlGamepadAxis::RightY,
-            GamepadAxis::RightTrigger => SdlGamepadAxis::TriggerRight,
-        }
-    }
-}
-
-#[doc(hidden)]
-impl From<SdlGamepadAxis> for GamepadAxis {
-    fn from(axis: SdlGamepadAxis) -> GamepadAxis {
-        match axis {
-            SdlGamepadAxis::LeftX => GamepadAxis::LeftStickX,
-            SdlGamepadAxis::LeftY => GamepadAxis::LeftStickY,
-            SdlGamepadAxis::TriggerLeft => GamepadAxis::LeftTrigger,
-            SdlGamepadAxis::RightX => GamepadAxis::RightStickX,
-            SdlGamepadAxis::RightY => GamepadAxis::RightStickY,
-            SdlGamepadAxis::TriggerRight => GamepadAxis::RightTrigger,
-        }
     }
 }
 
