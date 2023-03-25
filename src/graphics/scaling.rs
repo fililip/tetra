@@ -1,11 +1,11 @@
 //! Functions and types relating to screen scaling.
 
-use crate::Context;
 use crate::error::Result;
 use crate::graphics::{self, Canvas, DrawParams, Rectangle};
 use crate::input;
 use crate::math::Vec2;
 use crate::window;
+use crate::Context;
 
 /// A wrapper for a [`Canvas`] that handles scaling the image to fit the screen.
 ///
@@ -37,6 +37,30 @@ impl ScreenScaler {
         mode: ScalingMode,
     ) -> Result<ScreenScaler> {
         let canvas = Canvas::new(ctx, inner_width, inner_height)?;
+        let screen_rect =
+            get_screen_rect(mode, inner_width, inner_height, outer_width, outer_height);
+
+        Ok(ScreenScaler {
+            canvas,
+            mode,
+            screen_rect,
+            inner_width,
+            inner_height,
+            outer_width,
+            outer_height,
+        })
+    }
+
+    /// Returns a new `ScreenScaler`, using the given canvas for drawing.
+    /// The mode will determine how the image is scaled to fit the screen.
+    pub fn from_canvas(
+        canvas: Canvas,
+        outer_width: i32,
+        outer_height: i32,
+        mode: ScalingMode,
+    ) -> Result<ScreenScaler> {
+        let (inner_width, inner_height) = canvas.size();
+
         let screen_rect =
             get_screen_rect(mode, inner_width, inner_height, outer_width, outer_height);
 
@@ -124,8 +148,8 @@ impl ScreenScaler {
     /// feasible (e.g. 3rd party UI libraries).
     pub fn scale_factor(&self) -> f32 {
         f32::min(
-            self.screen_rect.width as f32 / self.inner_width as f32,
-            self.screen_rect.height as f32 / self.inner_height as f32,
+            self.screen_rect.width / self.inner_width as f32,
+            self.screen_rect.height / self.inner_height as f32,
         )
     }
 
@@ -237,7 +261,7 @@ fn unproject_impl(screen_pos: f32, rect_pos: f32, rect_size: f32, real_size: f32
 
 /// Algorithms that can be used to scale the game's screen.
 #[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum ScalingMode {
     /// The game will always be displayed at its native resolution, with no scaling applied.
     /// If the window is bigger than the native resolution, letterboxing will be applied.

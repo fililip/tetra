@@ -6,7 +6,7 @@ From 0.4.0 onwards, all breaking changes will be explicitly labelled, to make it
 
 This project adheres to Semantic Versioning.
 
-## [Upcoming]
+## [0.8.0] - 2023-03-17
 
 ### Added
 
@@ -15,6 +15,16 @@ This project adheres to Semantic Versioning.
   behaviour. ([@fililip](https://github.com/fililip) in [#321](https://github.com/17cupsofcoffee/tetra/pull/321))
 * `ScreenScaler` now has `scale_factor` and sizing utility methods. ([@timerertim](https://github.com/timerertim)
   in [#327](https://github.com/17cupsofcoffee/tetra/pull/327))
+* `ScreenScaler` now has a `from_canvas` constructor. This can be used for greater control over the canvas that is used for scaling.
+
+### Changed
+
+* **Breaking:** Updated `rodio` to 0.17.
+* **Breaking:** Updated `lyon_tessellation` to 1.0.
+* Updated `half` to 2.1.
+* Updated `hashbrown` to 0.13.
+* Updated `glow` to 0.12.
+* Various types now implement `Eq` as well as `PartialEq`.
 
 ## [0.7.0] - 2022-03-23
 
@@ -898,7 +908,8 @@ for. This can be useful when implementing more complex animation behaviors. ([@V
 
 * Initial release!
 
-[Upcoming]: https://github.com/17cupsofcoffee/tetra/compare/0.7.0..HEAD
+[Upcoming]: https://github.com/17cupsofcoffee/tetra/compare/0.8.0..HEAD
+[0.8.0]: https://github.com/17cupsofcoffee/tetra/compare/0.7.0..0.8.0
 [0.7.0]: https://github.com/17cupsofcoffee/tetra/compare/0.6.7..0.7.0
 [0.6.7]: https://github.com/17cupsofcoffee/tetra/compare/0.6.6..0.6.7
 [0.6.6]: https://github.com/17cupsofcoffee/tetra/compare/0.6.5..0.6.6

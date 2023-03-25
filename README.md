@@ -1,6 +1,6 @@
 # Tetra
 
-[![Build Status](https://img.shields.io/github/workflow/status/17cupsofcoffee/tetra/CI%20Build/main)](https://github.com/17cupsofcoffee/tetra/actions?query=branch%3Amain)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/17cupsofcoffee/tetra/ci.yml?branch=main)](https://github.com/17cupsofcoffee/tetra/actions?query=branch%3Amain)
 [![Crates.io](https://img.shields.io/crates/v/tetra.svg)](https://crates.io/crates/tetra)
 [![Documentation](https://docs.rs/tetra/badge.svg)](https://docs.rs/tetra)
 [![License](https://img.shields.io/crates/l/tetra.svg)](LICENSE)
@@ -34,7 +34,7 @@ For more information, see [this blog post](https://www.seventeencups.net/posts/t
 To add Tetra to your project, add the following line to your `Cargo.toml` file:
 
 ```toml
-tetra = "0.7"
+tetra = "0.8"
 ```
 
 You will also need to install the SDL2 native libraries - full details are provided in the [documentation](https://tetra.seventeencups.net/installation).
