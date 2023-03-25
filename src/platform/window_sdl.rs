@@ -510,7 +510,7 @@ where
     while let Some(event) = ctx.window.event_pump.poll_event() {
         match event {
             SdlEvent::Quit { .. } => {
-                state.event(ctx, Event::Quit);
+                let _ = state.event(ctx, Event::Quit);
                 ctx.running = false; // TODO: Add a way to override this
             },
 
