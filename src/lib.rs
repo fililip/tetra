@@ -67,8 +67,6 @@
 
 #![warn(missing_docs)]
 
-#[cfg(feature = "audio")]
-pub mod audio;
 mod context;
 pub mod error;
 mod fs;
