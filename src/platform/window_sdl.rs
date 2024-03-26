@@ -200,6 +200,13 @@ impl Window {
         self.sdl_window.raise()
     }
 
+    pub fn get_refresh_rate(&self) -> Result<i32> {
+        self.sdl_window
+            .display_mode()
+            .map(|display_mode| display_mode.refresh_rate)
+            .map_err(|e| TetraError::FailedToGetRefreshRate(e.to_string()))
+    }
+
     pub fn get_window_title(&self) -> &str {
         self.sdl_window.title()
     }
@@ -512,7 +519,7 @@ where
             SdlEvent::Quit { .. } => {
                 let _ = state.event(ctx, Event::Quit);
                 ctx.running = false; // TODO: Add a way to override this
-            },
+            }
 
             SdlEvent::Window { win_event, .. } => match win_event {
                 WindowEvent::SizeChanged(width, height) => {
