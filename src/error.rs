@@ -10,6 +10,11 @@ use image::ImageError;
 
 use lyon_tessellation::TessellationError;
 
+#[cfg(feature = "audio")]
+use rodio::decoder::DecoderError;
+
+use crate::graphics::GraphicsResetStatus;
+
 /// A specialized [`Result`](std::result::Result) type for Tetra.
 ///
 /// All Tetra functions with a recoverable failure condition will return this type.
@@ -68,6 +73,9 @@ pub enum TetraError {
     /// but was unable to do so.
     FailedToGetRefreshRate(String),
 
+    /// Returned when the GPU context has been lost.
+    GraphicsResetOccurred(GraphicsResetStatus),
+
     /// Returned when a shape cannot be tessellated.
     TessellationError(TessellationError),
 }
@@ -96,6 +104,18 @@ impl Display for TetraError {
             TetraError::FailedToChangeDisplayMode(msg) => {
                 write!(f, "Failed to change display mode: {}", msg)
             }
+            TetraError::GraphicsResetOccurred(status) => match status {
+                GraphicsResetStatus::Guilty => {
+                    write!(f, "A graphics reset caused by this GL context occurred")
+                }
+                GraphicsResetStatus::Innocent => write!(
+                    f,
+                    "A graphics reset that was not caused by this GL context occurred"
+                ),
+                GraphicsResetStatus::Unknown => {
+                    write!(f, "A graphics reset occurred for an unknown reason")
+                }
+            },
             TetraError::NoAudioDevice => write!(f, "No audio device available for playback"),
             TetraError::TessellationError(_) => {
                 write!(f, "An error occurred while tessellating a shape")
@@ -117,6 +137,7 @@ impl Error for TetraError {
             TetraError::NoAudioDevice => None,
             TetraError::FailedToGetRefreshRate(_) => None,
             TetraError::FailedToChangeDisplayMode(_) => None,
+            TetraError::GraphicsResetOccurred(_) => None,
             TetraError::TessellationError(reason) => Some(reason),
         }
     }

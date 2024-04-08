@@ -995,3 +995,22 @@ impl StencilState {
         }
     }
 }
+
+/// The types of GPU context resets.
+#[non_exhaustive]
+#[derive(Debug)]
+pub enum GraphicsResetStatus {
+    Guilty,
+    Innocent,
+    Unknown,
+}
+
+impl GraphicsResetStatus {
+    pub fn from_status_code(status: u32) -> GraphicsResetStatus {
+        match status {
+            glow::GUILTY_CONTEXT_RESET => GraphicsResetStatus::Guilty,
+            glow::INNOCENT_CONTEXT_RESET => GraphicsResetStatus::Innocent,
+            _ => GraphicsResetStatus::Unknown,
+        }
+    }
+}

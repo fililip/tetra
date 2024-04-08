@@ -50,7 +50,7 @@ impl Context {
             running: false,
             quit_on_escape: settings.quit_on_escape,
 
-            fps_limit: settings.fps_limit
+            fps_limit: settings.fps_limit,
         })
     }
 
@@ -128,6 +128,8 @@ impl Context {
         let mut last_time = Instant::now();
 
         while self.running {
+            self.device.get_graphics_reset_state()?;
+
             let curr_time = Instant::now();
             let diff_time = curr_time - last_time;
             last_time = curr_time;
