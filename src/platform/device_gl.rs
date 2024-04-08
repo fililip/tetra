@@ -11,8 +11,8 @@ use crate::graphics::{
     StencilState, StencilTest,
 };
 use crate::graphics::{
-    BlendFactor, BlendOperation, BlendState, Color, FilterMode, GraphicsDeviceInfo, StencilAction,
-    TextureFormat,
+    BlendFactor, BlendOperation, BlendState, Color, FilterMode, GraphicsDeviceInfo,
+    GraphicsResetStatus, StencilAction, TextureFormat,
 };
 use crate::math::{Mat2, Mat3, Mat4, Vec2, Vec3, Vec4};
 
@@ -110,6 +110,17 @@ impl GraphicsDevice {
                     .state
                     .gl
                     .get_parameter_string(glow::SHADING_LANGUAGE_VERSION),
+            }
+        }
+    }
+
+    pub fn get_graphics_reset_state(&self) -> Result {
+        unsafe {
+            match self.state.gl.get_graphics_reset_status() {
+                glow::NO_ERROR => Ok(()),
+                status => Err(TetraError::GraphicsResetOccurred(
+                    GraphicsResetStatus::from_status_code(status),
+                )),
             }
         }
     }
